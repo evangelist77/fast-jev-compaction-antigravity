@@ -1,4 +1,5 @@
 import { compact, reductionRatio } from './compact.js';
+export { formatAgySessionSummary } from './session-summary.js';
 import type {
   CompactOptions,
   CompactResult,

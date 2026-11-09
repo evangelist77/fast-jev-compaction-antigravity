@@ -7,6 +7,7 @@ import {
   agyTranscriptToMessages,
   compactAgyTranscript,
   formatAgyCompactionReport,
+  formatAgySessionSummary,
 } from '../src/antigravity.js';
 import type { CompactResult, JevAsker, JevQuestions } from '../src/types.js';
 
@@ -105,6 +106,13 @@ describe('Antigravity transcript adapter', () => {
     expect(report).toContain('fast-jev-compaction:');
     expect(report).toContain('1 kept');
     expect(report).toContain('1 call_dropped');
+
+    const sessionSummary = formatAgySessionSummary(result);
+    expect(sessionSummary).toContain('# Previous Session Summary');
+    expect(sessionSummary).toContain('## Compaction Statistics');
+    expect(sessionSummary).toContain('## User Requests');
+    expect(sessionSummary).toContain('Fix the failing test in parser.ts');
+    expect(sessionSummary).toContain('## Key Tool Interactions');
   });
 
   it('handles edge cases in transcript parsing and reporting', () => {
