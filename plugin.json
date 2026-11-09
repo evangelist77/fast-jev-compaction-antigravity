@@ -1,0 +1,13 @@
+{
+  "name": "fast-jev-compaction",
+  "version": "0.3.0",
+  "description": "Verbatim Jev-guided context compaction for Antigravity and Claude Code sessions.",
+  "author": {
+    "name": "Tamara Tran",
+    "url": "https://github.com/tamaratran"
+  },
+  "homepage": "https://github.com/tamaratran/fast-jev-compaction",
+  "repository": "https://github.com/tamaratran/fast-jev-compaction",
+  "license": "MIT",
+  "logo": "assets/logo.svg"
+}

@@ -1,0 +1,12 @@
+{
+  "fast-jev-compaction": {
+    "enabled": true,
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "npx tsx ./hooks/agy-hook.ts",
+        "timeout": 15
+      }
+    ]
+  }
+}
