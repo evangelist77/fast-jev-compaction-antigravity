@@ -5,16 +5,19 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { runAgyHook } from '../hooks/agy-hook.ts';
 import type { JevAsker, JevQuestions } from '../src/types.js';
 
-/** Expected structure of a native Antigravity checkpoint injected step. */
-interface CheckpointStep {
-  checkpoint?: {
-    sessionSummary?: string;
+/** Expected structure of a system message injected step. */
+interface SystemMessageStep {
+  systemMessage?: {
+    systemMessage?: string;
+    metadata?: {
+      user_markdown?: string;
+    };
   };
 }
 
 /** Expected output format from Antigravity PreInvocation hook. */
 interface PreInvocationResult {
-  injectSteps?: CheckpointStep[];
+  injectSteps?: SystemMessageStep[];
   terminationBehavior?: string;
 }
 
@@ -81,7 +84,7 @@ describe('Antigravity /compact hook interception', () => {
     fs.rmSync(tempDirectory, { recursive: true, force: true });
   });
 
-  it('injects checkpoint sessionSummary and terminates when lastUserInput is "/compact"', async () => {
+  it('injects compacted session summary and terminates when lastUserInput is "/compact"', async () => {
     const mockAsker = createMockAsker(() => 0.1);
     const parsed = await executeHook(
       { conversationId: 'c1', transcriptPath, artifactDirectoryPath: tempDirectory, lastUserInput: '/compact' },
@@ -91,8 +94,9 @@ describe('Antigravity /compact hook interception', () => {
 
     expect(parsed.terminationBehavior).toBe('terminate');
     expect(parsed.injectSteps).toHaveLength(1);
-    expect(typeof parsed.injectSteps?.[0]?.checkpoint?.sessionSummary).toBe('string');
-    expect(parsed.injectSteps?.[0]?.checkpoint?.sessionSummary?.length).toBeGreaterThan(0);
+    expect(typeof parsed.injectSteps?.[0]?.systemMessage?.systemMessage).toBe('string');
+    expect(parsed.injectSteps?.[0]?.systemMessage?.systemMessage?.length).toBeGreaterThan(0);
+    expect(parsed.injectSteps?.[0]?.systemMessage?.metadata?.user_markdown).toContain('Fast Jev Compaction Complete');
   });
 
   it('handles "/compact" with additional user arguments', async () => {
@@ -104,7 +108,8 @@ describe('Antigravity /compact hook interception', () => {
     );
 
     expect(parsed.terminationBehavior).toBe('terminate');
-    expect(typeof parsed.injectSteps?.[0]?.checkpoint?.sessionSummary).toBe('string');
+    expect(typeof parsed.injectSteps?.[0]?.systemMessage?.systemMessage).toBe('string');
+    expect(parsed.injectSteps?.[0]?.systemMessage?.metadata?.user_markdown).toContain('Fast Jev Compaction Complete');
   });
 
   it('returns empty object {} when lastUserInput is regular text', async () => {

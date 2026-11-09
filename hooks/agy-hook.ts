@@ -61,17 +61,20 @@ function buildInjectionResponse(summary: string): string {
   });
 }
 
-/** Constructs the Antigravity PreInvocation checkpoint injection response. */
-function buildCheckpointResponse(sessionSummary: string): string {
+/** Constructs the Antigravity PreInvocation response for manual /compact. */
+function buildManualCompactResponse(sessionSummary: string, report: string): string {
   return JSON.stringify({
-    injectSteps: [{ checkpoint: { sessionSummary } }],
+    injectSteps: [{
+      systemMessage: {
+        systemMessage: sessionSummary,
+        metadata: { user_markdown: `> **Fast Jev Compaction Complete**\n> \`${report}\`\n\n${sessionSummary}` },
+      },
+    }],
     terminationBehavior: 'terminate',
   });
 }
 
-/**
- * Handles explicit /compact command invocation by injecting a native checkpoint.
- */
+/** Handles explicit /compact command invocation by injecting a compacted session message. */
 async function handleManualCompact(
   payload: AgyHookInput,
   asker: JevAsker,
@@ -93,13 +96,12 @@ async function handleManualCompact(
   });
 
   const summary = formatAgySessionSummary(result);
+  const report = formatAgyCompactionReport(result);
   writeArtifactReport(payload.artifactDirectoryPath, result);
-  return buildCheckpointResponse(summary);
+  return buildManualCompactResponse(summary, report);
 }
 
-/**
- * Handles automatic threshold-based compaction when minSteps is met.
- */
+/** Handles automatic threshold-based compaction when minSteps is met. */
 async function handleAutoCompact(
   payload: AgyHookInput,
   asker: JevAsker,
@@ -121,11 +123,7 @@ async function handleAutoCompact(
   return buildInjectionResponse(formatAgyCompactionReport(result));
 }
 
-/**
- * Executes the Antigravity PreInvocation hook logic.
- * Handles both manual '/compact' commands and automatic step-threshold compaction.
- * Always returns a valid JSON string ('{}' or inject payload) and never throws.
- */
+/** Executes the Antigravity PreInvocation hook logic for manual or auto compaction. */
 export async function runAgyHook(
   stdinJson: string,
   env: NodeJS.ProcessEnv = process.env,
