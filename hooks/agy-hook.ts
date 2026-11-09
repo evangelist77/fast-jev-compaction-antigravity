@@ -26,6 +26,9 @@ export interface AgyHookInput {
 /** Matches slash command '/compact' with optional trailing arguments. */
 const COMPACT_COMMAND_REGEX = /^\/compact(?:\s+(.*))?$/i;
 
+/** Minimum required reduction ratio to trigger auto-compaction notice. */
+const MIN_AUTO_REDUCTION_RATIO = 0.25;
+
 /** Resolves the TypeSafe API key from environment variables or ~/.typesafe_key fallback file. */
 export function readApiKey(env: NodeJS.ProcessEnv = process.env): string {
   const envKey = env.TYPESAFE_API_KEY?.trim();
@@ -72,11 +75,11 @@ function buildCheckpointResponse(sessionSummary: string): string {
 async function handleManualCompact(
   payload: AgyHookInput,
   asker: JevAsker,
-  userInput: string,
   env: NodeJS.ProcessEnv,
 ): Promise<string> {
   if (!payload.transcriptPath || !fs.existsSync(payload.transcriptPath)) return '{}';
 
+  const userInput = (payload.lastUserInput ?? payload.prompt ?? '').trim();
   const jsonl = fs.readFileSync(payload.transcriptPath, 'utf8');
   const messages = agyTranscriptToMessages(jsonl);
   const keepMatch = userInput.match(/keep\s+(\d+)/i);
@@ -112,7 +115,7 @@ async function handleAutoCompact(
     keepThreshold: Number(env.JEV_KEEP_THRESHOLD ?? '0.5'),
   });
 
-  if (reductionRatio(result) < 0.25) return '{}';
+  if (reductionRatio(result) < MIN_AUTO_REDUCTION_RATIO) return '{}';
 
   writeArtifactReport(payload.artifactDirectoryPath, result);
   return buildInjectionResponse(formatAgyCompactionReport(result));
@@ -137,7 +140,7 @@ export async function runAgyHook(
     const userInput = (payload.lastUserInput ?? payload.prompt ?? '').trim();
 
     if (COMPACT_COMMAND_REGEX.test(userInput)) {
-      return await handleManualCompact(payload, asker, userInput, env);
+      return await handleManualCompact(payload, asker, env);
     }
 
     return await handleAutoCompact(payload, asker, env);
@@ -184,9 +187,7 @@ async function main(): Promise<void> {
   }
 
   const chunks: Buffer[] = [];
-  for await (const chunk of process.stdin) {
-    chunks.push(Buffer.from(chunk));
-  }
+  for await (const chunk of process.stdin) chunks.push(Buffer.from(chunk));
   const input = Buffer.concat(chunks).toString('utf8');
   const output = await runAgyHook(input, process.env);
   process.stdout.write(`${output}\n`);

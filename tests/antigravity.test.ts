@@ -171,20 +171,16 @@ describe('Antigravity transcript adapter', () => {
       async ask() {
         return {
           answers: {
-            call_t1: { type: 'noul' as const, noul: 0.1 },
-            result_t1: { type: 'noul' as const, noul: 0.1 },
-            call_t2: { type: 'noul' as const, noul: 0.9 },
-            result_t2: { type: 'noul' as const, noul: 0.9 },
+            call_t1: { type: 'noul' as const, noul: 0.1 }, result_t1: { type: 'noul' as const, noul: 0.1 },
+            call_t2: { type: 'noul' as const, noul: 0.9 }, result_t2: { type: 'noul' as const, noul: 0.9 },
           },
         };
       },
     };
 
     const payload = {
-      conversationId: 'test-conv',
-      transcriptPath: transcriptFile,
-      artifactDirectoryPath: tmpDir,
-      initialNumSteps: 25,
+      conversationId: 'test-conv', transcriptPath: transcriptFile,
+      artifactDirectoryPath: tmpDir, initialNumSteps: 25,
     };
 
     const outStr = await runAgyHook(

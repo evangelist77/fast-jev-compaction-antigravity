@@ -1,6 +1,10 @@
 import { reductionRatio } from './compact.js';
 import type { CompactResult, Message, ToolUse } from './types.js';
 
+const MAX_TOOL_SNIPPET_LENGTH = 120;
+const MAX_PROGRESS_SNIPPET_LENGTH = 200;
+const MAX_RECENT_PROGRESS_ITEMS = 5;
+
 /**
  * Extracts a concise target identifier (file path, CLI command, etc.) from tool inputs.
  */
@@ -37,7 +41,9 @@ function describeToolUse(use: ToolUse): string {
   const target = extractToolTarget(use.input);
   const targetStr = target ? ` (${target})` : '';
   const status = use.isError ? ' [FAILED]' : '';
-  const textSnippet = use.text ? `: ${use.text.trim().slice(0, 120).replace(/\s+/g, ' ')}` : '';
+  const textSnippet = use.text
+    ? `: ${use.text.trim().slice(0, MAX_TOOL_SNIPPET_LENGTH).replace(/\s+/g, ' ')}`
+    : '';
 
   return `- \`${use.tool}\`${targetStr}${status}${textSnippet}`;
 }
@@ -84,13 +90,13 @@ function formatRecentProgress(messages: readonly Message[]): string {
 
   for (const message of messages) {
     if (message.role === 'assistant' && message.text.trim()) {
-      notes.push(`- ${message.text.trim().slice(0, 200).replace(/\s+/g, ' ')}`);
+      notes.push(`- ${message.text.trim().slice(0, MAX_PROGRESS_SNIPPET_LENGTH).replace(/\s+/g, ' ')}`);
     }
   }
 
   if (notes.length === 0) return '';
 
-  const recent = notes.slice(-5);
+  const recent = notes.slice(-MAX_RECENT_PROGRESS_ITEMS);
   return ['## Recent Progress & Context', ...recent].join('\n');
 }
 
@@ -98,14 +104,14 @@ function formatRecentProgress(messages: readonly Message[]): string {
  * Formats Jev compaction statistics into Markdown.
  */
 function formatStatsSection(result: CompactResult): string {
-  const pct = Math.round(reductionRatio(result) * 100);
+  const reductionPercentage = Math.round(reductionRatio(result) * 100);
   const { stats } = result;
 
   return [
     '# Previous Session Summary',
     '',
     '## Compaction Statistics',
-    `- Messages: retained ${stats.messagesAfter} of ${stats.messagesBefore} (${pct}% reduction)`,
+    `- Messages: retained ${stats.messagesAfter} of ${stats.messagesBefore} (${reductionPercentage}% reduction)`,
     `- Tool calls: ${stats.kept} kept, ${stats.resultsDropped} results truncated, ${stats.callsDropped} calls dropped`,
   ].join('\n');
 }
